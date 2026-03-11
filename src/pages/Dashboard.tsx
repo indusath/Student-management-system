@@ -1,33 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, BookOpen, ClipboardList, FileText, TrendingUp, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { apiGet } from "@/lib/api";
 
-const stats = [
-  { name: "Total Students", value: "1,247", icon: Users, change: "+12 this month" },
-  { name: "Active Courses", value: "48", icon: BookOpen, change: "3 new this semester" },
-  { name: "Enrollments", value: "3,892", icon: ClipboardList, change: "+156 this week" },
-  { name: "Audit Actions", value: "847", icon: FileText, change: "Today: 23" },
-];
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface DashboardStats {
+  totalStudents: number;
+  activeCourses: number;
+  totalEnrollments: number;
+  auditActions: number;
+}
 
-const recentActions = [
-  { action: "Student registered", details: "John Perera (SE/2024/001)", time: "2 minutes ago", admin: "Admin" },
-  { action: "Course enrollment", details: "Database Systems - 5 students", time: "15 minutes ago", admin: "Admin" },
-  { action: "Course updated", details: "Software Engineering II", time: "1 hour ago", admin: "Admin" },
-  { action: "Student updated", details: "Mary Silva (SE/2023/045)", time: "2 hours ago", admin: "Admin" },
-  { action: "New course added", details: "Cloud Computing", time: "Yesterday", admin: "Admin" },
-];
+interface RecentAction {
+  action: string;
+  details: string;
+  timestamp: string;
+  administrator: string;
+}
 
-const upcomingTasks = [
-  { task: "Review pending enrollments", count: 12, priority: "high" },
-  { task: "Update course catalog", count: 3, priority: "medium" },
-  { task: "Student data verification", count: 28, priority: "low" },
-];
-
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeAction, setActiveAction] = useState<string | null>(null);
+
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentActions, setRecentActions] = useState<RecentAction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // GET YOUR_API_BASE_URL/dashboard/stats
+        const statsData = await apiGet<DashboardStats>("/dashboard/stats");
+        setStats(statsData);
+
+        // GET YOUR_API_BASE_URL/audit-logs?limit=5
+        const logsData = await apiGet<RecentAction[]>("/audit-logs?limit=5");
+        setRecentActions(logsData);
+      } catch {
+        // API not connected yet – silently show empty state
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const statCards = stats
+    ? [
+      { name: "Total Students", value: stats.totalStudents.toLocaleString(), icon: Users },
+      { name: "Active Courses", value: stats.activeCourses.toLocaleString(), icon: BookOpen },
+      { name: "Enrollments", value: stats.totalEnrollments.toLocaleString(), icon: ClipboardList },
+      { name: "Audit Actions", value: stats.auditActions.toLocaleString(), icon: FileText },
+    ]
+    : [];
 
   return (
     <div className="page-container">
@@ -40,22 +69,29 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        {stats.map((stat) => (
-          <Card key={stat.name}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.name}</p>
-                  <p className="stat-value mt-1">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="h-16 bg-muted animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))
+          : statCards.map((stat) => (
+            <Card key={stat.name}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.name}</p>
+                    <p className="stat-value mt-1">{stat.value}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <stat.icon className="h-6 w-6 text-primary" />
+                  </div>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="h-6 w-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
       {/* Quick Actions */}
@@ -104,47 +140,49 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActions.map((item, index) => (
-                <div key={index} className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
-                  <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{item.action}</p>
-                    <p className="text-sm text-muted-foreground truncate">{item.details}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{item.time} by {item.admin}</p>
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            ) : recentActions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+            ) : (
+              <div className="space-y-4">
+                {recentActions.map((item, index) => (
+                  <div key={index} className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
+                    <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{item.action}</p>
+                      <p className="text-sm text-muted-foreground truncate">{item.details}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(item.timestamp).toLocaleString()} by {item.administrator}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Pending Tasks */}
+        {/* Admin Management */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Pending Tasks
+              Admin Management
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {upcomingTasks.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div>
-                    <p className="text-sm font-medium">{item.task}</p>
-                    <p className="text-xs text-muted-foreground">{item.count} items pending</p>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    item.priority === 'high' ? 'bg-destructive/10 text-destructive' :
-                    item.priority === 'medium' ? 'bg-warning/10 text-warning' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {item.priority}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Create a new administrator account for the system.
+            </p>
+            <Button onClick={() => navigate("/admin/create")} className="w-full">
+              <Users className="h-4 w-4 mr-2" />
+              Create New Admin
+            </Button>
           </CardContent>
         </Card>
       </div>

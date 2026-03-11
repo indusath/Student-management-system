@@ -10,11 +10,12 @@ import {
   Menu,
   X,
   LogOut,
-
+  ShieldPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Navigation items
 const navigation = [
@@ -24,27 +25,39 @@ const navigation = [
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Enrollment", href: "/enrollment", icon: ClipboardList },
   { name: "Audit Logs", href: "/audit-logs", icon: FileText },
+  { name: "Create Admin", href: "/admin/create", icon: ShieldPlus },
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { logout } = useAuth();
 
-  // Get logged-in username from localStorage
-  const username = localStorage.getItem("username") || "User";
+  // Decode username from JWT if available
+  const getUsername = () => {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) return "Admin";
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.sub ?? payload.username ?? payload.name ?? "Admin";
+    } catch {
+      return "Admin";
+    }
+  };
+  const username = getUsername();
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-6 border-b border-sidebar-border">
-       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white p-1">
-  <img
-    src="/kdu-logo.png"
-    alt="KDU Logo"
-    className="h-full w-full object-contain"
-  />
-</div> 
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white p-1">
+          <img
+            src="/kdu-logo.png"
+            alt="KDU Logo"
+            className="h-full w-full object-contain"
+          />
+        </div>
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-sidebar-foreground">KDU</span>
           <span className="text-xs text-white">Student Management</span>
@@ -55,9 +68,9 @@ export function AdminSidebar() {
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navigation.map((item) => {
           const isActive =
-  location.pathname === item.href ||
-  (item.href === "/students" && location.pathname.startsWith("/students/") && location.pathname !== "/students/register" && !location.pathname.endsWith("/edit")) ||
-  (item.href === "/students/register" && location.pathname.endsWith("/edit"));
+            location.pathname === item.href ||
+            (item.href === "/students" && location.pathname.startsWith("/students/") && location.pathname !== "/students/register" && !location.pathname.endsWith("/edit")) ||
+            (item.href === "/students/register" && location.pathname.endsWith("/edit"));
           return (
             <NavLink
               key={item.name}
@@ -80,9 +93,9 @@ export function AdminSidebar() {
       {/* Footer with username */}
       <div className="px-4 py-4 border-t border-sidebar-border">
         <div className="text-xs text-white">
-  <p>Logged in as </p>
-  <p className="mt-1 font-medium">{username}</p>
-</div>
+          <p>Logged in as </p>
+          <p className="mt-1 font-medium">{username}</p>
+        </div>
       </div>
 
       {/* Logout */}
@@ -92,8 +105,8 @@ export function AdminSidebar() {
           size="sm"
           className="flex w-full items-center gap-2 text-sidebar-foreground hover:bg-sidebar-accent/50"
           onClick={() => {
-            localStorage.removeItem("username"); // Clear user data
-            navigate("/login"); // Navigate to login page
+            logout();
+            navigate("/login");
           }}
         >
           <LogOut className="h-4 w-4" />
