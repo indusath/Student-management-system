@@ -1,9 +1,6 @@
 package com.se_project.course_service.controller;
 
-import com.se_project.course_service.dto.CourseCreateRequestDTO;
-import com.se_project.course_service.dto.CourseCreateResponseDTO;
-import com.se_project.course_service.dto.EnrollRequestDTO;
-import com.se_project.course_service.dto.EnrollResponseDTO;
+import com.se_project.course_service.dto.*;
 import com.se_project.course_service.entity.Course;
 import com.se_project.course_service.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin
+
 @RequestMapping("/api/v1/course")
 public class CourseController {
 
@@ -33,11 +30,32 @@ public class CourseController {
         return ResponseEntity.ok(responseDTO);
     }
 
-    @GetMapping( path = "/get-All-Courses")
-    public ResponseEntity<List<Course>> getAllCourses() {
-        List<Course> courses = courseService.getAllCourses();
+    @GetMapping( path = "/get-all-courses")
+    public ResponseEntity<List<GetAllCourseDTO>> getAllCourses() {
+        List<GetAllCourseDTO> courses = courseService.getAllCourses();
         return ResponseEntity.ok(courses);
     }
+
+    @GetMapping("/getEnrollmentByStudentNumber/{studentNumber}")
+    public ResponseEntity<List<CourseEnrollmentDTO>> getEnrollmentByStudentNumber(@PathVariable String studentNumber) {
+        List<CourseEnrollmentDTO> enrollments = courseService.getEnrollmentByStudentNumber(studentNumber);
+        return ResponseEntity.ok(enrollments);
+    }
+
+    @PutMapping(path = "/update-enrollment/{studentNumber}")
+    public ResponseEntity<EnrollResponseDTO> updateEnrollment(@PathVariable String studentNumber, @RequestBody EnrollUpdateDTO enrollUpdateDTO) {
+
+        EnrollResponseDTO reponse = courseService.updateEnrollment(studentNumber,enrollUpdateDTO);
+
+        return ResponseEntity.ok(reponse) ;
+    }
+
+    @DeleteMapping(path = "/delete-course/{courseId}")
+    public ResponseEntity<MessageResponseDTO> deleteCourse(@PathVariable Long courseId) {
+        MessageResponseDTO responseDTO = courseService.deleteCourse(courseId);
+        return ResponseEntity.ok(responseDTO);
+    }
+
 
 
 

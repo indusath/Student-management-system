@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  #Database
+    student-db:
+        image: mysql:8.0
+        container_name: mysql-db
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: Himebw115
+            MYSQL_DATABASE: SMS_Students_db
+            MYSQL_USER: root
+            MYSQL_PASSWORD: Himebw115
+        ports:
+            - "3306:3306"
+        volumes:
+            - student-data:/var/lib/mysql
+
+    #Service 1- api gateway
+    api-gateway:
+    build:
+      context: ./api-gateway            # Folder with the Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"                    # This is the entry point for all requests
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - student-service
+      - course-service
+    networks:
+      - app-network

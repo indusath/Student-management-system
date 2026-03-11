@@ -17,8 +17,7 @@ import java.time.LocalDateTime;
 @Data
 public class StudentRegisterRequestDTO {
 
-    //private Long stuId;
-   // private String studentNumber;
+
     private String firstName;
     private String lastName;
     private int intake;

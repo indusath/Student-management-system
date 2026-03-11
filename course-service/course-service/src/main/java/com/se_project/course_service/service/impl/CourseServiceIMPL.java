@@ -1,19 +1,20 @@
 package com.se_project.course_service.service.impl;
 
-import com.se_project.course_service.dto.CourseCreateRequestDTO;
-import com.se_project.course_service.dto.CourseCreateResponseDTO;
-import com.se_project.course_service.dto.EnrollRequestDTO;
-import com.se_project.course_service.dto.EnrollResponseDTO;
+import com.se_project.course_service.dto.*;
 import com.se_project.course_service.entity.Course;
 import com.se_project.course_service.entity.CourseEnrollment;
 import com.se_project.course_service.entity.EnrollmentStatus;
 import com.se_project.course_service.repo.CourseEnrollmentRepo;
 import com.se_project.course_service.repo.CourseRepo;
 import com.se_project.course_service.service.CourseService;
+import com.se_project.course_service.util.Auditable;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CourseServiceIMPL implements CourseService {
@@ -25,6 +26,8 @@ public class CourseServiceIMPL implements CourseService {
 
 
     @Override
+    @Transactional
+    @Auditable(action = "CREATE_COURSE", entity = "Course")
     public CourseCreateResponseDTO createCourse(CourseCreateRequestDTO courseCreateRequestDTO) {
 
         Course course = new Course();
@@ -41,6 +44,8 @@ public class CourseServiceIMPL implements CourseService {
     }
 
     @Override
+    @Transactional
+    @Auditable(action = "ENROLL_STUDENT", entity = "CourseEnrollment")
     public EnrollResponseDTO enrollCourse(EnrollRequestDTO enrollRequestDTO) {
 
         CourseEnrollment enrollment = new CourseEnrollment();
@@ -62,11 +67,134 @@ public class CourseServiceIMPL implements CourseService {
 
     }
 
+
+
     @Override
-    public List<Course> getAllCourses() {
+    public List<CourseEnrollmentDTO> getEnrollmentByStudentNumber(String studentNumber) {
 
+        List<CourseEnrollment> enrollments = courseEnrollmentRepo.findAllByStudentNumber(studentNumber);
+
+        List<CourseEnrollmentDTO> enrollmentDTOs = new ArrayList<>();
+        for(CourseEnrollment enrollment : enrollments){
+            CourseEnrollmentDTO dto = new CourseEnrollmentDTO();
+            dto.setStudentNumber(enrollment.getStudentNumber());
+           // dto.setCourseCode(enrollment.getCourse().getCourseCode());
+            //CourseDTO courseDTO = new CourseDTO();
+            CourseDTO courseDTO = new CourseDTO();
+            // courseDTO.setCourseId(enrollment.getCourse().getCourseId());
+            courseDTO.setCourseName(enrollment.getCourse().getCourseName());
+            courseDTO.setCourseCode(enrollment.getCourse().getCourseCode());
+            courseDTO.setDepartment(enrollment.getCourse().getDepartment());
+            courseDTO.setDuration(enrollment.getCourse().getDuration());
+            courseDTO.setDescription(enrollment.getCourse().getDescription());
+            courseDTO.setIsActive(enrollment.getCourse().getIsActive());
+            dto.setCourse(courseDTO);
+
+            dto.setSemester(enrollment.getSemester().name());
+            dto.setAcademicYear(enrollment.getAcademicYear());
+            dto.setEnrollmentDate(enrollment.getEnrollmentDate());
+            dto.setStatus(enrollment.getStatus().name());
+            dto.setGrade(enrollment.getGrade() != null ? enrollment.getGrade().name() : null);
+
+
+
+
+//            dto.setSemester(enrollment.getSemester());
+//            dto.setAcademicYear(enrollment.getAcademicYear());
+//            dto.setEnrollmentDate(enrollment.getEnrollmentDate());
+//            dto.setStatus(enrollment.getStatus());
+//            dto.setGrade(enrollment.getGrade());
+
+            enrollmentDTOs.add(dto);
+        }
+        if (enrollments.isEmpty()) {
+            throw new RuntimeException("No enrollments found for student number: " + studentNumber);
+        }
+
+
+        return enrollmentDTOs;
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE_ENROLLMENT", entity = "CourseEnrollment")
+    public EnrollResponseDTO updateEnrollment(String studentNumber, EnrollUpdateDTO enrollUpdateDTO) {
+
+        if(!courseEnrollmentRepo.existsByStudentNumber(studentNumber)){
+            throw new RuntimeException("No enrollment found for student number: " + studentNumber);
+        }
+        CourseEnrollment enrollment = courseEnrollmentRepo.findById(enrollUpdateDTO.getId()).get();
+
+        //enrollment.setStatus(enrollUpdateDTO.getStatus());
+
+
+
+        return null;
+    }
+
+//    @Override
+//    public List<GetAllCourseDTO> getAllCourses() {
+//        List<Course> courses= courseRepo.findAll();
+//        List<GetAllCourseDTO> courseDTOs = new ArrayList<>();
+//        for(Course course : courses){
+//            CourseDTO dto = new CourseDTO();
+//            dto.setCourseName(course.getCourseName());
+//            dto.setCourseCode(course.getCourseCode());
+//            dto.setDepartment(course.getDepartment());
+//            dto.setDuration(course.getDuration());
+//            dto.setDescription(course.getDescription());
+//            dto.setIsActive(course.getIsActive());
+//            courseDTOs.add(dto);
+//
+//        }
+//
+//        return courseDTOs;
+//    }
+
+    @Override
+    public List<GetAllCourseDTO> getAllCourses() {
         List<Course> courses = courseRepo.findAll();
+        List<GetAllCourseDTO> courseDTOs = new ArrayList<>();
 
-        return courses;
+        for (Course course : courses) {
+            GetAllCourseDTO dto = new GetAllCourseDTO();
+
+            // FIX: id must be sent so edit/delete buttons work
+            dto.setId(String.valueOf(course.getCourseId()));
+
+            // FIX: frontend filters/displays by courseId — map from courseCode
+            dto.setCourseId(course.getCourseCode());
+
+            dto.setCourseName(course.getCourseName());
+            dto.setDescription(course.getDescription());
+            dto.setDepartment(course.getDepartment());
+            dto.setDuration(course.getDuration());
+
+            // FIX: frontend expects int credits — parse duration or add a credits field
+            // If your Course entity has a credits field use that, otherwise default to 3
+//            dto.setCredits(course.getCredits() != null ? course.getCredits() : 3);
+
+            // FIX: frontend expects "Active" or "Inactive" string, not boolean
+            dto.setStatus(Boolean.TRUE.equals(course.getIsActive()) ? "Active" : "Inactive");
+
+            List<CourseEnrollment> enrollments = courseEnrollmentRepo.findAllByCourse(course);
+             dto.setEnrolledStudents(enrollments.size());
+
+            // FIX: frontend shows enrolled count badge — default 0 until you wire course-service
+           // dto.setEnrolledStudents(0);
+
+            courseDTOs.add(dto);
+        }
+
+        return courseDTOs;
+    }
+
+    @Override
+    public MessageResponseDTO deleteCourse(Long courseId) {
+       courseRepo.deleteById(courseId);
+         return new MessageResponseDTO("Course deleted successfully");
+
+
+
     }
 }

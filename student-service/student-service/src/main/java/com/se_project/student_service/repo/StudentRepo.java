@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 @EnableJpaRepositories
 public interface StudentRepo extends JpaRepository<Student,Long> {
@@ -19,4 +21,10 @@ public interface StudentRepo extends JpaRepository<Student,Long> {
     );
 
     boolean existsByStudentIdNumber(String studentIdNumber);
+
+    Student findByStudentNumber(String studentNumber);
+
+    boolean existsByStudentNumber(String studentNumber);
+
+   // List<DegreeProgram> findAllDegreePrograms();
 }
