@@ -36,6 +36,18 @@ public class GatewayConfig {
                         .path("/api/v1/auth/validate")
                         .uri("lb://auth-service"))
 
+                // Get Admin - JWT required
+                .route("auth-get-admin", r -> r
+                        .path("/api/v1/auth/get-admin/**")
+                        .filters(f -> f.filter(authenticationFilter.apply(new AuthenticationFilter.Config())))
+                        .uri("lb://auth-service"))
+
+                // Get Admin - JWT required
+                .route("auth-update-admin", r -> r
+                        .path("/api/v1/auth/update/**")
+                        .filters(f -> f.filter(authenticationFilter.apply(new AuthenticationFilter.Config())))
+                        .uri("lb://auth-service"))
+
                 // Student Service - Authentication required
                 .route("student-service", r -> r
                         .path("/api/v1/student/**")

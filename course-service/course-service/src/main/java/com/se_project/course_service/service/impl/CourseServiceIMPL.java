@@ -208,6 +208,8 @@ public List<CourseEnrollmentDTO> getEnrollmentByStudentNumber(String studentNumb
     }
 
     @Override
+    @Transactional
+    @Auditable(action = "DELETE_COURSE", entity = "Course")
     public MessageResponseDTO deleteCourse(Long courseId) {
        courseRepo.deleteById(courseId);
          return new MessageResponseDTO("Course deleted successfully");
@@ -217,6 +219,8 @@ public List<CourseEnrollmentDTO> getEnrollmentByStudentNumber(String studentNumb
     }
 
     @Override
+    @Transactional
+    @Auditable(action = "DELETE_ENROLLMENT", entity = "CourseEnrollment")
     public MessageResponseDTO deleteEnrollment(Long id) {
 
         courseEnrollmentRepo.deleteById(id);
@@ -240,6 +244,8 @@ public List<CourseEnrollmentDTO> getEnrollmentByStudentNumber(String studentNumb
 //        return null;
 //    }
 @Override
+@Transactional
+@Auditable(action = "UPDATE_COURSE", entity = "Course")
 public CourseResponseDTO updateCourse(Long id, CourseUpdateRequestDTO request) {
 
     Course course = courseRepo.findById(id)
@@ -256,6 +262,11 @@ public CourseResponseDTO updateCourse(Long id, CourseUpdateRequestDTO request) {
 
     return mapToDTO(savedCourse);
 }
+
+    @Override
+    public long getcount() {
+        return courseEnrollmentRepo.count();
+    }
 
     private CourseResponseDTO mapToDTO(Course course) {
 

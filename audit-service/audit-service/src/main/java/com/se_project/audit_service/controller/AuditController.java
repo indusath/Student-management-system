@@ -2,10 +2,12 @@ package com.se_project.audit_service.controller;
 
 import com.se_project.audit_service.dto.AuditLogRequest;
 import com.se_project.audit_service.entity.AuditLog;
+import com.se_project.audit_service.repo.AuditLogRepo;
 import com.se_project.audit_service.service.AuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,9 @@ public class AuditController {
 
     @Autowired
     private  AuditService auditService;
+
+    @Autowired
+    private AuditLogRepo auditLogRepo;
 
     @PostMapping("/log")
     public ResponseEntity<AuditLog> logAction(@RequestBody AuditLogRequest request) {
@@ -46,5 +51,16 @@ public class AuditController {
     public ResponseEntity<List<AuditLog>> getAllLogs() {
         List<AuditLog> logs = auditService.getAllLogs();
         return ResponseEntity.ok(logs);
+    }
+
+    @GetMapping("/all-logs")
+    public List<AuditLog> getAllLogs(@RequestParam(defaultValue = "10") int limit) {
+        return auditLogRepo.findAll(PageRequest.of(0, limit)).getContent();
+    }
+
+    @GetMapping(path = "/count")
+    public ResponseEntity<Long> getAuditLogCount() {
+        long count = auditService.getAuditLogCount();
+        return ResponseEntity.ok(count);
     }
 }

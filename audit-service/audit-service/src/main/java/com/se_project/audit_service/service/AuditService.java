@@ -51,4 +51,8 @@ private AuditLogRepo auditLogRepo;
     public List<AuditLog> getAllLogs() {
         return auditLogRepo.findAllByOrderByCreatedAtDesc();
     }
+
+    public long getAuditLogCount() {
+        return auditLogRepo.count();
+    }
 }

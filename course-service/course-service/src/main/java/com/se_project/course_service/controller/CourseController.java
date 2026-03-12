@@ -83,6 +83,18 @@ public class CourseController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping(path = "/count")
+    public ResponseEntity<Long> countCourses() {
+        long count = courseService.getAllCourses().size();
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping(path = "/enrollment-count")
+    public ResponseEntity<Long> countEnrollments() {
+        long count = courseService.getcount();
+        return ResponseEntity.ok(count);
+    }
+
 
 
 

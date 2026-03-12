@@ -19,4 +19,6 @@ public interface StudentService {
     MessageResponseDTO deleteStudent(String studentNumber);
 
     StudentDetailsResponseDTO updateStudentDetails(String studentNumber, StudentUpdateRequestDTO dto);
+
+    long countStudents();
 }

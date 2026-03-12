@@ -26,4 +26,6 @@ public interface CourseService {
     List<CourseEnrollmentDTO> getCourseHistoryByStudentNumber(String studentNumber);
 
     CourseResponseDTO updateCourse(Long id, CourseUpdateRequestDTO request);
+
+    long getcount();
 }

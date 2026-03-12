@@ -3,6 +3,7 @@ package com.se_project.auth_service.service;
 import com.se_project.auth_service.dto.LoginRequest;
 import com.se_project.auth_service.dto.LoginResponse;
 import com.se_project.auth_service.dto.RegisterAdminRequest;
+import com.se_project.auth_service.dto.UpdateAdminRequest;
 import com.se_project.auth_service.entity.AdminUser;
 import com.se_project.auth_service.entity.Role;
 import com.se_project.auth_service.repo.AdminUserRepo;
@@ -117,5 +118,32 @@ public class AuthService {
 
         // Optional: You could add the token to a blacklist here
         // if you want to prevent its further use
+    }
+
+    public AdminUser getAdminByUsername(String username) {
+        return adminUserRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
+    }
+
+    @Transactional
+    @Auditable(action = "UPDATE_ADMIN", entity = "AdminUser")
+    public AdminUser updateAdmin(String username, UpdateAdminRequest request) {
+        AdminUser admin = adminUserRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
+
+        if (request.getFirstName() != null) {
+            admin.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null) {
+            admin.setLastName(request.getLastName());
+        }
+      if(request.getEmail() != null) {
+            if (adminUserRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
+            admin.setEmail(request.getEmail());
+      }
+
+        return adminUserRepository.save(admin);
     }
 }

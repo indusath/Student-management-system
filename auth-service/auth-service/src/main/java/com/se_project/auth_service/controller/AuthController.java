@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @Autowired
-    private  AuthService authService;
+    private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AdminUser> registerAdmin( @RequestBody RegisterAdminRequest request) {
+    public ResponseEntity<AdminUser> registerAdmin(@RequestBody RegisterAdminRequest request) {
         log.info("API: Registering new admin");
         AdminUser admin = authService.registerAdmin(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(admin);
@@ -58,7 +58,29 @@ public class AuthController {
         return ResponseEntity.ok(new TokenValidationResponse(false, null, null));
     }
 
+    @GetMapping(path = "/get-admin/{username}")
+    public ResponseEntity<AdminUser> getAdminByUsername(@PathVariable String username) {
+        log.info("API: Get admin by username {}", username);
+        AdminUser admin = authService.getAdminByUsername(username);
+        if (admin != null) {
+            return ResponseEntity.ok(admin);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
+    @PutMapping(path = "/update/{username}")
+    public ResponseEntity<AdminUser> updateAdmin(
+            @PathVariable String username,
+            @RequestBody UpdateAdminRequest request) {
+        log.info("API: Update admin {}", username);
+        AdminUser updatedAdmin = authService.updateAdmin(username, request);
+        if (updatedAdmin != null) {
+            return ResponseEntity.ok(updatedAdmin);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
 
 
-
+    }
 }

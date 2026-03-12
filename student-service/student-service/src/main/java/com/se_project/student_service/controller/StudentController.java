@@ -66,6 +66,12 @@ public class StudentController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping(path = "/count")
+    public ResponseEntity<Long> countStudents() {
+        long count = studentService.countStudents();
+        return ResponseEntity.ok(count);
+    }
+
 
 
 

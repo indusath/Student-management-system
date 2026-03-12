@@ -205,6 +205,8 @@ public class StudentServiceIMPL implements StudentService {
     }
 
     @Override
+    @Transactional
+    @Auditable(action = "DELETE_STUDENT", entity = "Student")
     public MessageResponseDTO deleteStudent(String studentNumber) {
         Student student = studentRepo.findByStudentNumber(studentNumber);
         if (student == null) {
@@ -216,6 +218,8 @@ public class StudentServiceIMPL implements StudentService {
     }
 
     @Override
+    @Transactional
+    @Auditable(action = "UPDATE_STUDENT", entity = "Student")
     public StudentDetailsResponseDTO updateStudentDetails(String studentNumber, StudentUpdateRequestDTO dto) {
         Student student = studentRepo.findByStudentNumber(studentNumber);
         if (student == null) {
@@ -234,5 +238,11 @@ public class StudentServiceIMPL implements StudentService {
 
         // Reuse existing method to return full updated details
         return getAllStudentDetailsByID(studentNumber);
+    }
+
+    @Override
+    public long countStudents() {
+        return studentRepo.count();
+
     }
 }
