@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Loader2 } from "lucide-react";
+import { Pencil, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPut } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,11 +65,14 @@ const emptyErrors: FormErrors = { ...emptyForm };
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function StudentRegistration() {
+export default function StudentEdit() {
   const navigate = useNavigate();
+  const { id } = useParams(); // This is the studentNumber identifier
+
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [errors, setErrors] = useState<FormErrors>(emptyErrors);
   const [loading, setLoading] = useState(false);
+  const [fetchingStudent, setFetchingStudent] = useState(true);
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgramOption[]>(FALLBACK_DEGREE_PROGRAMS);
   const [degreeProgramsReady, setDegreeProgramsReady] = useState(false);
 
@@ -98,7 +101,33 @@ export default function StudentRegistration() {
     fetchDegreePrograms();
   }, []);
 
-  // ── Validation ─────────────────────────────────────────────────────────────
+  // ── Pre-fill student data ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!id || !degreeProgramsReady) return;
+
+    const fetchStudent = async () => {
+      setFetchingStudent(true);
+      try {
+        const data = await apiGet<any>(`/api/v1/student/get-every-student-details/${id}`);
+        setFormData({
+          studentIdNumber: data.studentIdNumber ?? "",
+          firstName: data.firstName ?? "",
+          lastName: data.lastName ?? "",
+          intake: data.intake != null ? String(data.intake) : "",
+          address: data.address ?? "",
+          birthday: data.birthday ?? "",
+          degreeProgram: data.degreeProgram != null ? String(data.degreeProgram) : "",
+        });
+      } catch {
+        toast.error("Failed to load student data");
+        navigate("/students");
+      } finally {
+        setFetchingStudent(false);
+      }
+    };
+    fetchStudent();
+  }, [id, degreeProgramsReady, navigate]);
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = { ...emptyErrors };
     if (!formData.studentIdNumber.trim()) newErrors.studentIdNumber = "Student ID is required";
@@ -107,7 +136,7 @@ export default function StudentRegistration() {
     if (!formData.intake.trim()) {
       newErrors.intake = "Intake year is required";
     } else if (!/^\d{2}$/.test(formData.intake)) {
-      newErrors.intake = "Intake must be a 2-digit year (e.g. 41/42/43)";
+      newErrors.intake = "Intake must be a 2-digit year";
     }
     if (!formData.address.trim()) newErrors.address = "Address is required";
     if (!formData.birthday) newErrors.birthday = "Date of birth is required";
@@ -117,7 +146,6 @@ export default function StudentRegistration() {
     return Object.values(newErrors).every((e) => !e);
   };
 
-  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -134,34 +162,45 @@ export default function StudentRegistration() {
     };
 
     try {
-      const response: any = await apiPost("/api/v1/student/register-student", payload);
-      const generatedNumber = response?.studentNumber || formData.studentIdNumber;
-      toast.success("Student registered successfully", {
-        description: `${formData.firstName} ${formData.lastName} (${generatedNumber})`,
-      });
+      // Use specific update API
+      await apiPut(`/api/v1/student/update-student-details/${id}`, payload);
+      toast.success("Student updated successfully");
       navigate("/students");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Registration failed";
-      toast.error("Failed to register student", { description: msg });
+      const msg = err instanceof Error ? err.message : "Update failed";
+      toast.error("Failed to update student", { description: msg });
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetchingStudent) {
+    return (
+      <div className="page-container">
+        <div className="h-64 flex items-center justify-center text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin mr-2" />
+          Loading student data…
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1 className="page-title">Student Registration</h1>
-        <p className="page-description">
-          Register a new student in the system. Course enrollment is done separately after registration.
-        </p>
+        <Button variant="ghost" onClick={() => navigate("/students")} className="mb-4 p-0 hover:bg-transparent">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Students
+        </Button>
+        <h1 className="page-title">Edit Student</h1>
+        <p className="page-description">Update the student's personal and academic details.</p>
       </div>
 
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            New Student Details
+            <Pencil className="h-5 w-5" />
+            Edit Student Details
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -170,14 +209,10 @@ export default function StudentRegistration() {
               <Label htmlFor="studentIdNumber">Student ID Number</Label>
               <Input
                 id="studentIdNumber"
-                placeholder="e.g. NIC"
                 value={formData.studentIdNumber}
                 onChange={(e) => setFormData({ ...formData, studentIdNumber: e.target.value })}
-                disabled={loading}
+                disabled={true} // ID usually not changeable
               />
-              {errors.studentIdNumber && (
-                <p className="validation-message">{errors.studentIdNumber}</p>
-              )}
             </div>
 
             <div className="form-row">
@@ -185,7 +220,6 @@ export default function StudentRegistration() {
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
                   id="firstName"
-                  placeholder="Enter first name"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   disabled={loading}
@@ -196,7 +230,6 @@ export default function StudentRegistration() {
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input
                   id="lastName"
-                  placeholder="Enter last name"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   disabled={loading}
@@ -209,8 +242,6 @@ export default function StudentRegistration() {
               <Label htmlFor="intake">Intake</Label>
               <Input
                 id="intake"
-                type="text"
-                placeholder="e.g. 40, 41, 42"
                 value={formData.intake}
                 onChange={(e) => setFormData({ ...formData, intake: e.target.value })}
                 disabled={loading}
@@ -222,7 +253,6 @@ export default function StudentRegistration() {
               <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
-                placeholder="Enter full address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 disabled={loading}
@@ -257,21 +287,18 @@ export default function StudentRegistration() {
                     {degreePrograms.map((program) => (
                       <SelectItem key={program.name} value={program.name}>
                         {program.displayName}
-                        {program.code ? ` (${program.code})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.degreeProgram && (
-                  <p className="validation-message">{errors.degreeProgram}</p>
-                )}
+                {errors.degreeProgram && <p className="validation-message">{errors.degreeProgram}</p>}
               </div>
             </div>
 
             <div className="flex gap-3 pt-4">
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Save Student
+                Save Changes
               </Button>
               <Button
                 type="button"

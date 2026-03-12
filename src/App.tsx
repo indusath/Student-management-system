@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import StudentRegistration from "./pages/StudentRegistration";
+import StudentEdit from "./pages/StudentEdit";
 import StudentList from "./pages/StudentList";
 import StudentProfile from "./pages/StudentProfile";
 import Enrollment from "./pages/Enrollment";
@@ -48,7 +49,7 @@ const App = () => (
               <Route path="/students" element={<StudentList />} />
               <Route path="/students/register" element={<StudentRegistration />} />
               <Route path="/students/:id" element={<StudentProfile />} />
-              <Route path="/students/:id/edit" element={<StudentRegistration />} />
+              <Route path="/students/:id/edit" element={<StudentEdit />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/enrollment" element={<Enrollment />} />
               <Route path="/audit-logs" element={<AuditLogs />} />

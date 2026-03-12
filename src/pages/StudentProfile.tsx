@@ -37,13 +37,68 @@ export default function StudentProfile() {
   const [studentData, setStudentData] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // useEffect(() => {
+  //   const fetchStudent = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const data = await apiGet<any>(`/api/v1/student/get-every-student-details/${id}`);
+
+  //       console.log("Raw student data:", JSON.stringify(data)); // debug — remove later
+
+  //       const allEnrollments: any[] = data.enrollments ?? [];
+
+  //       setStudentData({
+  //         id: data.studentNumber ?? id,
+  //         studentId: data.studentIdNumber ?? "",
+  //         firstName: data.firstName ?? "",
+  //         lastName: data.lastName ?? "",
+  //         address: data.address ?? "",
+  //         dateOfBirth: data.birthday ?? "",
+  //         degreeProgram: data.degreeProgram != null
+  //           ? String(data.degreeProgram).replace(/_/g, " ")
+  //           : "",
+
+  //         // ✅ FIX: course data is nested inside e.course object
+  //         // ✅ FIX: status filter changed from "ACTIVE" → "ENROLLED"
+  //         enrolledCourses: allEnrollments
+  //           .filter((e) => !e.status || e.status === "ENROLLED")
+  //           .map((e) => ({
+  //             courseId: e.course?.courseCode ?? e.courseId ?? e.courseCode ?? "",
+  //             courseName: e.course?.courseName ?? e.courseName ?? "",
+  //             semester: e.semester ?? "",
+  //             academicYear: String(e.academicYear ?? ""),
+  //             enrollmentDate: e.enrollmentDate ?? "",
+  //           })),
+
+  //         courseHistory: allEnrollments
+  //           .filter((e) => e.status && e.status !== "ENROLLED")
+  //           .map((e) => ({
+  //             courseId: e.course?.courseCode ?? e.courseId ?? e.courseCode ?? "",
+  //             courseName: e.course?.courseName ?? e.courseName ?? "",
+  //             semester: e.semester ?? "",
+  //             academicYear: String(e.academicYear ?? ""),
+  //             enrollmentDate: e.enrollmentDate ?? "",
+  //             status: e.status ?? "Completed",
+  //           })),
+  //       });
+
+  //     } catch {
+  //       // Student not found or API not connected — leave studentData null
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   if (id) fetchStudent();
+  // }, [id]);
   useEffect(() => {
     const fetchStudent = async () => {
       setLoading(true);
       try {
-        const data = await apiGet<any>(`/api/v1/student/get-every-student-details/${id}`);
-
-        console.log("Raw student data:", JSON.stringify(data)); // debug — remove later
+        // Fetch student details and course history in parallel
+        const [data, historyData] = await Promise.all([
+          apiGet<any>(`/api/v1/student/get-every-student-details/${id}`),
+          apiGet<any[]>(`/api/v1/course/getCourseHistoryByStudentNumber/${id}`).catch(() => []),
+        ]);
 
         const allEnrollments: any[] = data.enrollments ?? [];
 
@@ -58,28 +113,24 @@ export default function StudentProfile() {
             ? String(data.degreeProgram).replace(/_/g, " ")
             : "",
 
-          // ✅ FIX: course data is nested inside e.course object
-          // ✅ FIX: status filter changed from "ACTIVE" → "ENROLLED"
-          enrolledCourses: allEnrollments
-            .filter((e) => !e.status || e.status === "ENROLLED")
-            .map((e) => ({
-              courseId: e.course?.courseCode ?? e.courseId ?? e.courseCode ?? "",
-              courseName: e.course?.courseName ?? e.courseName ?? "",
-              semester: e.semester ?? "",
-              academicYear: String(e.academicYear ?? ""),
-              enrollmentDate: e.enrollmentDate ?? "",
-            })),
+          // Current enrollments — from student-service (already filtered to ENROLLED only)
+          enrolledCourses: allEnrollments.map((e) => ({
+            courseId: e.course?.courseCode ?? e.courseId ?? e.courseCode ?? "",
+            courseName: e.course?.courseName ?? e.courseName ?? "",
+            semester: e.semester ?? "",
+            academicYear: String(e.academicYear ?? ""),
+            enrollmentDate: e.enrollmentDate ?? "",
+          })),
 
-          courseHistory: allEnrollments
-            .filter((e) => e.status && e.status !== "ENROLLED")
-            .map((e) => ({
-              courseId: e.course?.courseCode ?? e.courseId ?? e.courseCode ?? "",
-              courseName: e.course?.courseName ?? e.courseName ?? "",
-              semester: e.semester ?? "",
-              academicYear: String(e.academicYear ?? ""),
-              enrollmentDate: e.enrollmentDate ?? "",
-              status: e.status ?? "Completed",
-            })),
+          // Course history — from the new dedicated course-service endpoint
+          courseHistory: historyData.map((e: any) => ({
+            courseId: e.course?.courseCode ?? "",
+            courseName: e.course?.courseName ?? "",
+            semester: e.semester ?? "",
+            academicYear: String(e.academicYear ?? ""),
+            enrollmentDate: e.enrollmentDate ?? "",
+            status: e.status ?? "Completed",
+          })),
         });
 
       } catch {
