@@ -32,28 +32,78 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 
-const semesters = ["Semester 1", "Semester 2", "Summer Semester"];
+// const semesters = [
+//   { value: "SEMESTER_1", label: "Semester 1" },
+//   { value: "SEMESTER_2", label: "Semester 2" },
+//   { value: "SUMMER_SEMESTER", label: "Summer Semester" },
+// ];
+
+// const statuses = ["ENROLLED", "COMPLETED", "DROPPED", "FAILED"];
+// const grades = ["A", "B", "C", "D", "F", "N/A"];
+
+const semesters = [
+  { value: "SEMESTER_1", label: "Semester 1" },
+  { value: "SEMESTER_2", label: "Semester 2" },
+  { value: "SEMESTER_3", label: "Semester 3" },
+  { value: "SEMESTER_4", label: "Semester 4" },
+  { value: "SEMESTER_5", label: "Semester 5" },
+  { value: "SEMESTER_6", label: "Semester 6" },
+  { value: "SEMESTER_7", label: "Semester 7" },
+  { value: "SEMESTER_8", label: "Semester 8" },
+  { value: "SUMMER", label: "Summer Semester" },
+];
+
+const statuses = [
+  { value: "ENROLLED", label: "Currently Enrolled" },
+  { value: "COMPLETED", label: "Completed" },
+  { value: "DROPPED", label: "Dropped" },
+  { value: "FAILED", label: "Failed" },
+  { value: "WITHDRAWN", label: "Withdrawn" },
+];
+
+const grades = [
+  { value: "A_PLUS", label: "A+" },
+  { value: "A", label: "A" },
+  { value: "A_MINUS", label: "A-" },
+  { value: "B_PLUS", label: "B+" },
+  { value: "B", label: "B" },
+  { value: "B_MINUS", label: "B-" },
+  { value: "C_PLUS", label: "C+" },
+  { value: "C", label: "C" },
+  { value: "C_MINUS", label: "C-" },
+  { value: "D", label: "D" },
+  { value: "F", label: "F" },
+  { value: "INCOMPLETE", label: "I" },
+  { value: "PASS", label: "P" },
+  { value: "NOT_GRADED", label: "NG" },
+];
 
 interface Student {
-  id: string;
-  studentId: string;
-  name: string;          // adjust to match your API field (e.g. firstName + lastName)
-  degreeProgram: string;
+  id: string; // from backend (or similar)
+  studentId: string; // The primary ID from the student API
+  firstName: string;
+  lastName: string;
+  studentNumber?: string; // Add optional mapping just in case
 }
 
 interface Course {
   id: string;
-  courseId: string;
+  courseId: string; // Used as courseCode as mapped from backend
   courseName: string;
 }
 
 interface Enrollment {
-  id: string;
-  courseId: string;
-  courseName: string;
+  id: number;
+  studentNumber: string;
+  course: {
+    courseCode: string;
+    courseName: string;
+  };
   semester: string;
-  academicYear: string;
+  academicYear: number;
   enrollmentDate: string;
+  status: string;
+  grade: string;
 }
 
 export default function Enrollment() {
@@ -68,33 +118,34 @@ export default function Enrollment() {
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ semester: "", academicYear: "", enrollmentDate: "" });
+  const [editForm, setEditForm] = useState({ status: "", grade: "" });
 
   const [enrollForm, setEnrollForm] = useState({
-    courseId: "",
+    courseId: "", // this will bind to courseCode
     semester: "",
     academicYear: "",
     enrollmentDate: "",
+    credits: "3", // default
   });
   const [errors, setErrors] = useState({
     courseId: "",
     semester: "",
     academicYear: "",
     enrollmentDate: "",
+    credits: "",
   });
 
   // Load students and courses once
   useEffect(() => {
     const init = async () => {
       try {
-        // GET YOUR_API_BASE_URL/students
-        const s = await apiGet<Student[]>("/students");
+        // REPLACE THIS with your actual student fetching API
+        const s = await apiGet<Student[]>("/api/v1/student/get-all-students");
         setStudents(s);
-        // GET YOUR_API_BASE_URL/courses
-        const c = await apiGet<Course[]>("/courses");
+        const c = await apiGet<Course[]>("/api/v1/course/get-all-courses");
         setCourses(c);
       } catch {
-        toast.error("Failed to load students/courses");
+        toast.error("Failed to load global data. Check your API endpoints.");
       }
     };
     init();
@@ -106,11 +157,12 @@ export default function Enrollment() {
     const fetchEnrollments = async () => {
       setLoadingEnrollments(true);
       try {
-        // GET YOUR_API_BASE_URL/enrollments?studentId=:id
-        const data = await apiGet<Enrollment[]>(`/enrollments?studentId=${selectedStudent.id}`);
+        const data = await apiGet<Enrollment[]>(`/api/v1/course/getEnrollmentByStudentNumber/${selectedStudent.id || selectedStudent.studentNumber}`);
         setEnrollments(data);
+        console.log("enrollments", data);
       } catch {
-        toast.error("Failed to load enrollments");
+        // Only error out clearly if there are actually enrollments or it's a persistent issue.
+        setEnrollments([]);
       } finally {
         setLoadingEnrollments(false);
       }
@@ -120,9 +172,13 @@ export default function Enrollment() {
 
   const filteredStudents = students.filter(
     (s) =>
-      s.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.name.toLowerCase().includes(searchQuery.toLowerCase())
+      s.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.studentId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.studentNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.lastName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  console.log(filteredStudents);
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
@@ -131,11 +187,12 @@ export default function Enrollment() {
   };
 
   const validateEnrollment = () => {
-    const newErrors = { courseId: "", semester: "", academicYear: "", enrollmentDate: "" };
+    const newErrors = { courseId: "", semester: "", academicYear: "", enrollmentDate: "", credits: "" };
     if (!enrollForm.courseId) newErrors.courseId = "Course is required";
     if (!enrollForm.semester) newErrors.semester = "Semester is required";
     if (!enrollForm.academicYear.trim()) newErrors.academicYear = "Academic year is required";
     if (!enrollForm.enrollmentDate) newErrors.enrollmentDate = "Enrollment date is required";
+    if (!enrollForm.credits) newErrors.credits = "Credits are required";
     setErrors(newErrors);
     return Object.values(newErrors).every((e) => !e);
   };
@@ -148,16 +205,28 @@ export default function Enrollment() {
 
     setSaving(true);
     try {
-      // POST YOUR_API_BASE_URL/enrollments
-      const newEnrollment = await apiPost<Enrollment>("/enrollments", {
-        studentId: selectedStudent.id,
-        courseId: course.id,
+
+
+      console.log("selectedStudent.id", selectedStudent.id);
+      console.log("course.courseId", course.courseId);
+      console.log("enrollForm.semester", enrollForm.semester);
+      console.log("enrollForm.academicYear", enrollForm.academicYear);
+      console.log("enrollForm.enrollmentDate", enrollForm.enrollmentDate);
+      console.log("enrollForm.credits", enrollForm.credits);
+      // POST course/enroll
+      await apiPost<{ message: string }>("/api/v1/course/enroll", {
+        id: selectedStudent.id,
+        courseCode: course.courseId,
         semester: enrollForm.semester,
-        academicYear: enrollForm.academicYear,
+        academicYear: parseInt(enrollForm.academicYear),
         enrollmentDate: enrollForm.enrollmentDate,
+        credits: parseInt(enrollForm.credits)
       });
-      setEnrollments([...enrollments, newEnrollment]);
-      setEnrollForm({ courseId: "", semester: "", academicYear: "", enrollmentDate: "" });
+
+      // Since POST might only return success message, reload enrollments
+      const data = await apiGet<Enrollment[]>(`/api/v1/course/getEnrollmentByStudentNumber/${selectedStudent.studentId || selectedStudent.studentNumber}`);
+      setEnrollments(data);
+      setEnrollForm({ courseId: "", semester: "", academicYear: "", enrollmentDate: "", credits: "" });
       toast.success("Course enrolled successfully");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to enroll";
@@ -168,10 +237,14 @@ export default function Enrollment() {
   };
 
   const handleRemove = async () => {
+
+    //onsole.log("selectedEnrollment.id", selectedEnrollment.id);
+
     if (!selectedEnrollment) return;
     try {
+
       // DELETE YOUR_API_BASE_URL/enrollments/:id
-      await apiDelete(`/enrollments/${selectedEnrollment.id}`);
+      await apiDelete(`/api/v1/course/delete-enrollment/${selectedEnrollment.id}`);
       setEnrollments(enrollments.filter((e) => e.id !== selectedEnrollment.id));
       toast.success("Course removed from enrollment");
     } catch {
@@ -185,21 +258,35 @@ export default function Enrollment() {
   const openEditDialog = (enrollment: Enrollment) => {
     setSelectedEnrollment(enrollment);
     setEditForm({
-      semester: enrollment.semester,
-      academicYear: enrollment.academicYear,
-      enrollmentDate: enrollment.enrollmentDate,
+      status: enrollment.status || "ENROLLED",
+      grade: enrollment.grade || "N/A",
     });
     setIsEditDialogOpen(true);
   };
 
   const handleEditSave = async () => {
-    if (!editForm.semester || !editForm.academicYear || !editForm.enrollmentDate) return;
+    if (!editForm.status) return;
     setSaving(true);
     try {
-      // PUT YOUR_API_BASE_URL/enrollments/:id
-      await apiPut(`/enrollments/${selectedEnrollment?.id}`, editForm);
+      if (!selectedStudent || !selectedEnrollment) return;
+      // PUT update-enrollment
+
+      const payload = {
+        id: selectedEnrollment.id,
+        status: editForm.status,
+        grade: editForm.grade !== "N/A" ? editForm.grade : null
+      };
+
+      console.log("=== UPDATE ENROLLMENT DEBUG ===");
+      console.log("selectedEnrollment object:", selectedEnrollment);
+      console.log("selectedEnrollment.id:", selectedEnrollment.id);
+      console.log("typeof id:", typeof selectedEnrollment.id);
+      console.log("payload being sent:", JSON.stringify(payload));
+
+      await apiPut(`/api/v1/course/update-enrollment`, payload);
+      //onsole.log("selectedEnrollment.id", selectedEnrollment.id);
       setEnrollments(enrollments.map((e) =>
-        e.id === selectedEnrollment?.id ? { ...e, ...editForm } : e
+        e.id === selectedEnrollment.id ? { ...e, status: editForm.status, grade: editForm.grade } : e
       ));
       setIsEditDialogOpen(false);
       toast.success("Enrollment updated successfully");
@@ -245,8 +332,8 @@ export default function Enrollment() {
                       onClick={() => handleSelectStudent(student)}
                       className="w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors"
                     >
-                      <p className="font-medium">{student.name}</p>
-                      <p className="text-sm text-muted-foreground">{student.studentId} • {student.degreeProgram}</p>
+                      <p className="font-medium">{student.firstName} {student.lastName}</p>
+                      <p className="text-sm text-muted-foreground">{student.id || student.studentNumber}</p>
                     </button>
                   ))}
                   {filteredStudents.length === 0 && (
@@ -268,13 +355,13 @@ export default function Enrollment() {
                     <User className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h2 className="font-semibold">{selectedStudent.name}</h2>
+                    <h2 className="font-semibold">{selectedStudent.firstName} {selectedStudent.lastName}</h2>
                     <p className="text-sm text-muted-foreground">
-                      {selectedStudent.studentId} • {selectedStudent.degreeProgram}
+                      {selectedStudent.studentId || selectedStudent.studentNumber}
                     </p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => setSelectedStudent(null)}>
+                <Button variant="outline" onClick={() => { setSelectedStudent(null); setEnrollments([]); }}>
                   Change Student
                 </Button>
               </div>
@@ -312,7 +399,7 @@ export default function Enrollment() {
                       <SelectTrigger><SelectValue placeholder="Select semester" /></SelectTrigger>
                       <SelectContent>
                         {semesters.map((sem) => (
-                          <SelectItem key={sem} value={sem}>{sem}</SelectItem>
+                          <SelectItem key={sem.value} value={sem.value}>{sem.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -337,6 +424,18 @@ export default function Enrollment() {
                       disabled={saving}
                     />
                     {errors.enrollmentDate && <p className="validation-message">{errors.enrollmentDate}</p>}
+                  </div>
+                  <div className="input-wrapper">
+                    <Label>Credits (For Student-level overriding)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={enrollForm.credits}
+                      onChange={(e) => setEnrollForm({ ...enrollForm, credits: e.target.value })}
+                      disabled={saving}
+                    />
+                    {errors.credits && <p className="validation-message">{errors.credits}</p>}
                   </div>
                   <Button type="submit" className="w-full" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
@@ -364,6 +463,7 @@ export default function Enrollment() {
                         <th>Semester</th>
                         <th>Year</th>
                         <th>Enrolled</th>
+                        <th>Status</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -377,15 +477,18 @@ export default function Enrollment() {
                           <td colSpan={5} className="text-center py-6 text-muted-foreground">No courses enrolled</td>
                         </tr>
                       ) : (
-                        enrollments.map((enrollment) => (
-                          <tr key={enrollment.id}>
+                        enrollments.map((enrollment, index) => (
+                          <tr key={enrollment.id || `enrollment-${index}`}>
                             <td>
-                              <p className="font-medium">{enrollment.courseId}</p>
-                              <p className="text-xs text-muted-foreground">{enrollment.courseName}</p>
+                              <p className="font-medium">{enrollment.course?.courseCode}</p>
+                              <p className="text-xs text-muted-foreground">{enrollment.course?.courseName}</p>
                             </td>
                             <td>{enrollment.semester}</td>
                             <td>{enrollment.academicYear}</td>
                             <td>{new Date(enrollment.enrollmentDate).toLocaleDateString()}</td>
+                            <td>
+                              <Badge variant="outline">{enrollment.status}</Badge>
+                            </td>
                             <td>
                               <Button variant="ghost" size="sm" onClick={() => openEditDialog(enrollment)}>
                                 <Pencil className="h-4 w-4" />
@@ -417,7 +520,7 @@ export default function Enrollment() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Course Enrollment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove {selectedEnrollment?.courseName} from {selectedStudent?.name}'s enrollment?
+              Are you sure you want to remove {selectedEnrollment?.course?.courseName} from {selectedStudent?.firstName} {selectedStudent?.lastName}'s enrollment?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -438,36 +541,33 @@ export default function Enrollment() {
           <div className="space-y-4 py-2">
             <div className="input-wrapper">
               <Label>Course</Label>
-              <Input value={selectedEnrollment?.courseName || ""} disabled />
+              <Input value={selectedEnrollment?.course?.courseName || ""} disabled />
             </div>
             <div className="input-wrapper">
-              <Label>Semester</Label>
-              <Select value={editForm.semester} onValueChange={(v) => setEditForm({ ...editForm, semester: v })} disabled={saving}>
-                <SelectTrigger><SelectValue placeholder="Select semester" /></SelectTrigger>
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })} disabled={saving}>
+                <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
                 <SelectContent>
-                  {semesters.map((sem) => (
-                    <SelectItem key={sem} value={sem}>{sem}</SelectItem>
+                  {statuses.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="input-wrapper">
-              <Label>Academic Year</Label>
-              <Input
-                placeholder="e.g., 2024/2025"
-                value={editForm.academicYear}
-                onChange={(e) => setEditForm({ ...editForm, academicYear: e.target.value })}
-                disabled={saving}
-              />
-            </div>
-            <div className="input-wrapper">
-              <Label>Enrollment Date</Label>
-              <Input
-                type="date"
-                value={editForm.enrollmentDate}
-                onChange={(e) => setEditForm({ ...editForm, enrollmentDate: e.target.value })}
-                disabled={saving}
-              />
+              <Label>Grade</Label>
+              <Select value={editForm.grade} onValueChange={(v) => setEditForm({ ...editForm, grade: v })} disabled={saving}>
+                <SelectTrigger><SelectValue placeholder="Select grade" /></SelectTrigger>
+                <SelectContent>
+                  {grades.map((grade) => (
+                    <SelectItem key={grade.value} value={grade.value}>
+                      {grade.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

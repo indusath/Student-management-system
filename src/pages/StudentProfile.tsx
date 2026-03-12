@@ -37,61 +37,46 @@ export default function StudentProfile() {
   const [studentData, setStudentData] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   const fetchStudent = async () => {
-  //     setLoading(true);
-  //     try {
-  //       // GET YOUR_API_BASE_URL/students/:id
-  //       const data = await apiGet<StudentDetail>(`/api/v1/student/get-every-student-details/${id}`);
-  //       setStudentData(data);
-  //     } catch {
-  //       // Student not found or API not connected
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   if (id) fetchStudent();
-  // }, [id]);
   useEffect(() => {
     const fetchStudent = async () => {
       setLoading(true);
       try {
         const data = await apiGet<any>(`/api/v1/student/get-every-student-details/${id}`);
 
-        // Map backend field names → frontend interface
-        // Backend sends one flat `enrollments` list — split into active vs history
+        console.log("Raw student data:", JSON.stringify(data)); // debug — remove later
+
         const allEnrollments: any[] = data.enrollments ?? [];
 
         setStudentData({
           id: data.studentNumber ?? id,
-          studentId: data.studentIdNumber ?? "",       // backend: studentIdNumber
+          studentId: data.studentIdNumber ?? "",
           firstName: data.firstName ?? "",
           lastName: data.lastName ?? "",
           address: data.address ?? "",
-          dateOfBirth: data.birthday ?? "",              // backend: birthday
+          dateOfBirth: data.birthday ?? "",
           degreeProgram: data.degreeProgram != null
             ? String(data.degreeProgram).replace(/_/g, " ")
             : "",
 
-          // Backend has no active/history split yet — treat all as enrolled for now
-          // Once course-service returns a status field, filter here accordingly
+          // ✅ FIX: course data is nested inside e.course object
+          // ✅ FIX: status filter changed from "ACTIVE" → "ENROLLED"
           enrolledCourses: allEnrollments
-            .filter((e) => !e.status || e.status === "ACTIVE")
+            .filter((e) => !e.status || e.status === "ENROLLED")
             .map((e) => ({
-              courseId: e.courseId ?? e.courseCode ?? "",
-              courseName: e.courseName ?? "",
+              courseId: e.course?.courseCode ?? e.courseId ?? e.courseCode ?? "",
+              courseName: e.course?.courseName ?? e.courseName ?? "",
               semester: e.semester ?? "",
-              academicYear: e.academicYear ?? "",
+              academicYear: String(e.academicYear ?? ""),
               enrollmentDate: e.enrollmentDate ?? "",
             })),
 
           courseHistory: allEnrollments
-            .filter((e) => e.status && e.status !== "ACTIVE")
+            .filter((e) => e.status && e.status !== "ENROLLED")
             .map((e) => ({
-              courseId: e.courseId ?? e.courseCode ?? "",
-              courseName: e.courseName ?? "",
+              courseId: e.course?.courseCode ?? e.courseId ?? e.courseCode ?? "",
+              courseName: e.course?.courseName ?? e.courseName ?? "",
               semester: e.semester ?? "",
-              academicYear: e.academicYear ?? "",
+              academicYear: String(e.academicYear ?? ""),
               enrollmentDate: e.enrollmentDate ?? "",
               status: e.status ?? "Completed",
             })),
@@ -223,8 +208,8 @@ export default function StudentProfile() {
                       </td>
                     </tr>
                   ) : (
-                    studentData.enrolledCourses.map((course) => (
-                      <tr key={course.courseId}>
+                    studentData.enrolledCourses.map((course, index) => (
+                      <tr key={course.courseId || `enrolled-${index}`}>
                         <td className="font-medium">{course.courseId}</td>
                         <td>{course.courseName}</td>
                         <td>{course.semester}</td>
@@ -271,8 +256,8 @@ export default function StudentProfile() {
                       </td>
                     </tr>
                   ) : (
-                    studentData.courseHistory.map((course) => (
-                      <tr key={course.courseId}>
+                    studentData.courseHistory.map((course, index) => (
+                      <tr key={course.courseId || `history-${index}`}>
                         <td className="font-medium">{course.courseId}</td>
                         <td>{course.courseName}</td>
                         <td>{course.semester}</td>

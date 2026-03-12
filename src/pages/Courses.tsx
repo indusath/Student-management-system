@@ -399,10 +399,7 @@ export default function Courses() {
               <p className="font-medium">{viewCourse?.description}</p>
             </div>
             <div className="form-row">
-              <div>
-                <p className="text-sm text-muted-foreground">Credits</p>
-                <p className="font-medium">{viewCourse?.credits ?? "N/A"}</p>
-              </div>
+
               <div>
                 <p className="text-sm text-muted-foreground">Enrolled Students</p>
                 <p className="font-medium">{viewCourse?.enrolledStudents ?? 0}</p>
