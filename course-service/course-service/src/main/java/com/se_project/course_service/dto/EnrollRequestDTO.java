@@ -7,6 +7,7 @@ import com.se_project.course_service.entity.Semester;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,15 +15,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
-@NamedEntityGraph
+@NoArgsConstructor
 @Data
 public class EnrollRequestDTO {
-    private String studentNumber;  // "STU-2026-0001"
 
+    private String id;  // "STU-2026-0001"
     private String courseCode;  // Reference to Course entity
     private Semester semester;  // SEMESTER_1, SEMESTER_2
     private Integer academicYear;
     private LocalDate enrollmentDate;
+    private int credits;
     //private Grade grade;
 
 //    @CreationTimestamp

@@ -14,6 +14,7 @@ public class GetAllStudentsDTO {
 
     // Matches frontend: student.studentId  (the NIC / display ID)
     private String studentId;
+    private String studentNumber;
 
     private String firstName;
     private String lastName;

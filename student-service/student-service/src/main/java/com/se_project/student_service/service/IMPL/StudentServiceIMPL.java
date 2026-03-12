@@ -174,6 +174,7 @@ public class StudentServiceIMPL implements StudentService {
                 dto.setFirstName(student.getFirstName());
                 dto.setLastName(student.getLastName());
                 dto.setDegreeProgram(student.getDegreeProgram().name()); // enum → "SOFTWARE_ENGINEERING"
+                dto.setStudentNumber(student.getStudentNumber());
 
 
 //                List<CourseEnrollmentDTO> enrollments = courseClient.getEnrollmentsByStudentNumber(student.getStudentNumber());
@@ -212,5 +213,26 @@ public class StudentServiceIMPL implements StudentService {
         studentRepo.delete(student);
         return new MessageResponseDTO("Student with number " + studentNumber + " deleted successfully");
         //return null;
+    }
+
+    @Override
+    public StudentDetailsResponseDTO updateStudentDetails(String studentNumber, StudentUpdateRequestDTO dto) {
+        Student student = studentRepo.findByStudentNumber(studentNumber);
+        if (student == null) {
+            throw new RuntimeException("Student with number " + studentNumber + " not found");
+        }
+
+        student.setStudentIdNumber(dto.getStudentIdNumber());
+        student.setFirstName(dto.getFirstName());
+        student.setLastName(dto.getLastName());
+        student.setIntake(dto.getIntake());
+        student.setAddress(dto.getAddress());
+        student.setBirthday(dto.getBirthday());
+        student.setDegreeProgram(DegreeProgram.valueOf(dto.getDegreeProgram()));
+
+        studentRepo.save(student);
+
+        // Reuse existing method to return full updated details
+        return getAllStudentDetailsByID(studentNumber);
     }
 }

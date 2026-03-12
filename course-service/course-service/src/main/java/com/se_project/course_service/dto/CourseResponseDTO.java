@@ -7,15 +7,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class CourseCreateRequestDTO {
+public class CourseResponseDTO {
 
-    private String courseName;  // "Software Engineering"
-    private String courseCode;  // "SE", "CS", "IT"
+    private Long id;
+    private String courseId; // mapped from courseCode
+    private String courseName;
     private String department;
     private String duration;
     private String description;
-
-
-
+    private int enrolledStudents;
+    private String status;
 
 }

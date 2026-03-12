@@ -17,4 +17,6 @@ public interface StudentService {
     List<GetAllStudentsDTO> getAllStudentDetails();
 
     MessageResponseDTO deleteStudent(String studentNumber);
+
+    StudentDetailsResponseDTO updateStudentDetails(String studentNumber, StudentUpdateRequestDTO dto);
 }

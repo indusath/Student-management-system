@@ -57,6 +57,15 @@ public class StudentController {
 
     }
 
+    @PutMapping("/update-student-details/{studentNumber}")
+    public ResponseEntity<StudentDetailsResponseDTO> updateStudentDetails(
+            @PathVariable String studentNumber,
+            @RequestBody StudentUpdateRequestDTO dto) {
+
+        StudentDetailsResponseDTO response = studentService.updateStudentDetails(studentNumber, dto);
+        return ResponseEntity.ok(response);
+    }
+
 
 
 

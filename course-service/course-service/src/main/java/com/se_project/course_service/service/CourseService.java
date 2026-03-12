@@ -15,9 +15,15 @@ public interface CourseService {
 
     List<CourseEnrollmentDTO> getEnrollmentByStudentNumber(String studentNumber);
 
-    EnrollResponseDTO updateEnrollment(String studentNumber, EnrollUpdateDTO enrollUpdateDTO);
+    EnrollResponseDTO updateEnrollment( EnrollUpdateDTO enrollUpdateDTO);
 
     List<GetAllCourseDTO> getAllCourses();
 
     MessageResponseDTO deleteCourse(Long courseId);
+
+    MessageResponseDTO deleteEnrollment(Long id);
+
+    List<CourseEnrollmentDTO> getCourseHistoryByStudentNumber(String studentNumber);
+
+    CourseResponseDTO updateCourse(Long id, CourseUpdateRequestDTO request);
 }

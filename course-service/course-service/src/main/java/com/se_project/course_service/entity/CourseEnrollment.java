@@ -86,8 +86,8 @@ public class CourseEnrollment {
 //    @Column(name = "status", nullable = false)
 //    private EnrollmentStatus status = EnrollmentStatus.ENROLLED;
 //
-//    @Column(name = "credits")
-//    private Integer credits;
+    @Column(name = "credits")
+    private Integer credits;
 //
 //    @Column(name = "grade")
 //    private String grade;

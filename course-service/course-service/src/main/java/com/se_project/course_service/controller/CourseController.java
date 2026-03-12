@@ -26,6 +26,8 @@ public class CourseController {
 
     @PostMapping(path = "/enroll")
     public ResponseEntity<EnrollResponseDTO> enrollCourse(@RequestBody EnrollRequestDTO enrollRequestDTO) {
+
+        System.out.println("Received enrollment request: " + enrollRequestDTO);
         EnrollResponseDTO responseDTO = courseService.enrollCourse(enrollRequestDTO);
         return ResponseEntity.ok(responseDTO);
     }
@@ -42,11 +44,10 @@ public class CourseController {
         return ResponseEntity.ok(enrollments);
     }
 
-    @PutMapping(path = "/update-enrollment/{studentNumber}")
-    public ResponseEntity<EnrollResponseDTO> updateEnrollment(@PathVariable String studentNumber, @RequestBody EnrollUpdateDTO enrollUpdateDTO) {
+    @PutMapping(path = "/update-enrollment")
+    public ResponseEntity<EnrollResponseDTO> updateEnrollment( @RequestBody EnrollUpdateDTO enrollUpdateDTO) {
 
-        EnrollResponseDTO reponse = courseService.updateEnrollment(studentNumber,enrollUpdateDTO);
-
+        EnrollResponseDTO reponse = courseService.updateEnrollment(enrollUpdateDTO);
         return ResponseEntity.ok(reponse) ;
     }
 
@@ -55,6 +56,34 @@ public class CourseController {
         MessageResponseDTO responseDTO = courseService.deleteCourse(courseId);
         return ResponseEntity.ok(responseDTO);
     }
+
+    @DeleteMapping(path = "/delete-enrollment/{id}")
+    public ResponseEntity<MessageResponseDTO> deleteEnrollment(@PathVariable Long id) {
+        MessageResponseDTO responseDTO = courseService.deleteEnrollment(id);
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @GetMapping("/getCourseHistoryByStudentNumber/{studentNumber}")
+    public ResponseEntity<List<CourseEnrollmentDTO>> getCourseHistoryByStudentNumber(
+            @PathVariable String studentNumber) {
+        List<CourseEnrollmentDTO> history = courseService.getCourseHistoryByStudentNumber(studentNumber);
+
+        System.out.println("Course history for student number " + studentNumber + ": " + history);
+        return ResponseEntity.ok(history);
+    }
+
+    @PutMapping("/update-course/{id}")
+    public ResponseEntity<CourseResponseDTO> updateCourse(
+            @PathVariable Long id,
+            @RequestBody CourseUpdateRequestDTO request
+    ) {
+
+        CourseResponseDTO response = courseService.updateCourse(id, request);
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 
 

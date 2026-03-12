@@ -7,15 +7,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class CourseCreateRequestDTO {
+public class CourseUpdateRequestDTO {
 
-    private String courseName;  // "Software Engineering"
-    private String courseCode;  // "SE", "CS", "IT"
+    private String courseCode;
+    private String courseName;
     private String department;
     private String duration;
     private String description;
-
-
-
-
 }
