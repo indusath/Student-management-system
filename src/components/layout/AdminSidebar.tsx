@@ -25,7 +25,8 @@ const navigation = [
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Enrollment", href: "/enrollment", icon: ClipboardList },
   { name: "Audit Logs", href: "/audit-logs", icon: FileText },
-  { name: "Create Admin", href: "/admin/create", icon: ShieldPlus },
+  { name: "My Profile", href: "/admin/profile", icon: ShieldPlus },
+  { name: "Create Admin", href: "/admin/create", icon: UserPlus },
 ];
 
 export function AdminSidebar() {

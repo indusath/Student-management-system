@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, BookOpen, ClipboardList, FileText, TrendingUp, Calendar } from "lucide-react";
+import { Users, BookOpen, ClipboardList, FileText, TrendingUp, Calendar, ShieldCheck, UserCog, ShieldPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -240,18 +240,29 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+              <ShieldCheck className="h-5 w-5" />
               Admin Management
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create a new administrator account for the system.
-            </p>
-            <Button onClick={() => navigate("/admin/create")} className="w-full">
-              <Users className="h-4 w-4 mr-2" />
-              Create New Admin
-            </Button>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Update your personal information and account settings.
+              </p>
+              <Button onClick={() => navigate("/admin/profile")} className="w-full" variant="outline">
+                <UserCog className="h-4 w-4 mr-2" />
+                Manage Profile
+              </Button>
+            </div>
+            <div className="pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground mb-3">
+                Register a new administrator account for the system.
+              </p>
+              <Button onClick={() => navigate("/admin/create")} className="w-full">
+                <ShieldPlus className="h-4 w-4 mr-2" />
+                Create New Admin
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

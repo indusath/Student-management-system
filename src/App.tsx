@@ -16,6 +16,7 @@ import Enrollment from "./pages/Enrollment";
 import AuditLogs from "./pages/AuditLogs";
 import NotFound from "./pages/NotFound";
 import CreateAdmin from "./pages/CreateAdmin";
+import AdminProfile from "./pages/AdminProfile";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/audit-logs" element={<AuditLogs />} />
               {/* Admin management – only accessible when logged in */}
               <Route path="/admin/create" element={<CreateAdmin />} />
+              <Route path="/admin/profile" element={<AdminProfile />} />
             </Route>
 
             {/* Catch-all */}
