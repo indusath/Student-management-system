@@ -8,17 +8,7 @@ To get the project up and running immediately, please follow the detailed steps 
 
 👉 **[View the Sharing & Running Guide](./SHARE_GUIDE.md)**
 
-## 📋 Evaluation & Grading
 
-I have prepared a self-evaluation report based on the marking schema provided by the lecturer. This report justifies the technical decisions and implementation details.
-
-👉 **[View the Self-Evaluation Report](./EVALUATION_REPORT.md)**
-
-## 🎓 Viva Preparation
-
-If you are preparing for your viva session, I have created a guide that covers the most likely technical questions about the architecture, security, and implementation.
-
-👉 **[Viva Preparation Guide](./viva_preparation_guide.md)** (Local Artifact Link)
 
 ## 🛠️ Tech Stack
 
